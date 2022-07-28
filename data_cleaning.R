@@ -19,4 +19,13 @@ unp_df <- unp_df %>%
   mutate(Month = as_date(Month, origin = date("1900/01/01"))) %>% 
   mutate(Month = as.yearmon(Month))
 
-#change NA values to 0 and make gtf column numeric
+#change NA values to 0, make gtf column numeric
+unp_df[unp_df$gtf_Mcm == "N/A"] <- 0
+unp_df <- unp_df %>% 
+  mutate(gtf_Mcm = as.numeric(gtf_Mcm))
+
+#change colnames to lowercase
+names(unp_df) <- tolower(names(unp_df))
+
+#export to csv
+write_csv(unp_df, "gas_exports_data_cleaned.csv")
