@@ -17,7 +17,8 @@ unp_df <- unp_df %>%
   transform(Month = as.numeric(as.character(Month))) %>% 
   mutate(date = as_date(Month, origin = date("1900/01/01"))) %>% 
   mutate(month = month(date, label = TRUE, abbr = TRUE)) %>% 
-  mutate(year = year(date))
+  mutate(year = year(date)) %>% 
+  select(-c(Month, date))
 
 #change NA values to 0, make gtf column numeric
 unp_df$gtf_Mcm[unp_df$gtf_Mcm == "N/A"] <- 0
