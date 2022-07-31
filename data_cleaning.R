@@ -16,7 +16,7 @@ colnames(unp_df)[5] <- "gtf_Mcm"
 unp_df <- unp_df %>%
   transform(Month = as.numeric(as.character(Month))) %>% 
   mutate(date = as_date(Month, origin = date("1900/01/01"))) %>% 
-  mutate(month = month(date, label = TRUE, abbr = TRUE)) %>% 
+  mutate(month = month(date)) %>% 
   mutate(year = year(date)) %>% 
   select(-c(Month, date))
 
