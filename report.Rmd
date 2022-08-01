@@ -1,0 +1,106 @@
+---
+title: "European Gas Trade Flows 2022"
+author: "Jorge Bandeira"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+## 1. Summary
+The following analysis aims to display the main trade flows of natural gas in Europe.
+The data used for this analysis was downloaded from the [IEA website](https://www.iea.org/data-and-statistics/data-product/gas-trade-flows).
+
+## 2. Data processing
+First, the dataset was imported into an R dataframe and converted to a long format unpivoting the month columns.
+
+``` {r eval = FALSE, results='hide'}
+library(tidyverse)
+library(readxl)
+library(data.table)
+library(lubridate)
+
+# read raw xls file
+raw_df <- read_excel("Export_GTF_IEA_202205_edited.xls")
+
+#unpivot months
+unp_df <- melt(setDT(raw_df), id.vars = c("Borderpoint", "Exit", "Entry"), variable.name = "Month")
+
+```
+
+Next, the original "Month" values were converted to dates and separate columns for month and year were created.
+
+``` {r eval = FALSE, results='hide'}
+#create year and month columns
+unp_df <- unp_df %>%
+  transform(Month = as.numeric(as.character(Month))) %>% 
+  mutate(date = as_date(Month, origin = date("1900/01/01"))) %>% 
+  mutate(month = month(date)) %>% 
+  mutate(year = year(date)) %>% 
+  select(-c(Month, date))
+```
+
+It was detected that some flow values were displayed as "N/A". These values were switched to 0 and the data type of the flow column was changed to numeric to allow calculations to be performed.
+Column names we also changed to lower case for consistency. The clean data was then exported to a csv file.
+
+``` {r eval = FALSE, results='hide'}
+#change NA values to 0, make gtf column numeric
+unp_df$gtf_Mcm[unp_df$gtf_Mcm == "N/A"] <- 0
+unp_df <- unp_df %>% 
+  mutate(gtf_Mcm = as.numeric(gtf_Mcm))
+
+#change colnames to lowercase
+names(unp_df) <- tolower(names(unp_df))
+
+#export to csv
+write_csv(unp_df, "gas_exports_data_cleaned.csv")
+  
+```
+
+## 3. Visualizing the data
+
+To setup the data for visualization, first, a new dataframe was created by filtering values from 2022, excluding LNG flows since those are out of scope and grouping the data by exit and entry pairs.
+
+``` {r eval = TRUE, results='hide'}
+library(tidyverse)
+library(networkD3)
+
+#import clean data
+gas_data <- read_csv("gas_exports_data_cleaned.csv")
+
+#function to get top exporters for a given year
+getTrade <- function(f_year) {
+    gas_data %>%
+    select(exit, entry, gtf_mcm, year) %>% 
+    filter(year == f_year, entry != "Liquefied Natural Gas", exit != "Liquefied Natural Gas") %>% 
+    group_by(exit, entry) %>% 
+    summarise(export = sum(gtf_mcm)) %>% 
+    arrange(desc(export)) %>% 
+    filter(export > 2000)
+}
+
+top_exp_2022 <- getTrade(2022)
+```
+
+To visualize the data, it was decided that a good option would be to use a sankey network style chart.
+The library "networkD3" was used.
+To allow the creation of the chart "networkD3" requires a dataframe with the unique nodes as well as unique Ids for each node.
+
+``` {r eval = TRUE, results='hide'}
+#create nodes df for networkD3
+nodes_2022 <- data.frame(name=c(as.character(top_exp_2022$exit), as.character(top_exp_2022$entry)) %>% unique())
+
+#set ids for networkD3
+top_exp_2022$exitId = match(top_exp_2022$exit, nodes_2022$name) - 1
+top_exp_2022$entryId = match(top_exp_2022$entry, nodes_2022$name) - 1
+
+#create chat with overview of natural gas trade
+gas_trade_chart_2022 <- sankeyNetwork(Links = top_exp_2022, Nodes = nodes_2022, Source = "exitId", Target = "entryId", 
+                                      Value = "export", NodeID = "name", sinksRight = TRUE, fontFamily = "Arial", fontSize = 10, nodePadding = 20)
+
+
+```
+```{r message=FALSE, results='hold', fig.align='center'}
+sankeyNetwork(Links = top_exp_2022, Nodes = nodes_2022, Source = "exitId", Target = "entryId", 
+                                      Value = "export", NodeID = "name", sinksRight = TRUE, fontFamily = "Arial", fontSize = 10, nodePadding = 20)
+```
+
+The visual displays the main natural gas trade flows (> 2000 Mcm) in Europe.
