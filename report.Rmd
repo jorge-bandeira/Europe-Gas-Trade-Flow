@@ -12,7 +12,7 @@ The data used for this analysis was downloaded from the [IEA website](https://ww
 ## 2. Data processing
 First, the dataset was imported into an R dataframe and converted to a long format unpivoting the month columns.
 
-``` {r eval = FALSE, results='hide'}
+``` {r eval = FALSE, message = FALSE, results='hide'}
 library(tidyverse)
 library(readxl)
 library(data.table)
@@ -59,7 +59,7 @@ write_csv(unp_df, "gas_exports_data_cleaned.csv")
 
 To setup the data for visualization, first, a new dataframe was created by filtering values from 2022, excluding LNG flows since those are out of scope and grouping the data by exit and entry pairs.
 
-``` {r eval = TRUE, results='hide'}
+``` {r eval = TRUE, message = FALSE, results='hide'}
 library(tidyverse)
 library(networkD3)
 
@@ -84,7 +84,7 @@ To visualize the data, it was decided that a good option would be to use a sanke
 The library "networkD3" was used.
 To allow the creation of the chart "networkD3" requires a dataframe with the unique nodes as well as unique Ids for each node.
 
-``` {r eval = TRUE, results='hide'}
+``` {r eval = TRUE, message = FALSE, results='hide'}
 #create nodes df for networkD3
 nodes_2022 <- data.frame(name=c(as.character(top_exp_2022$exit), as.character(top_exp_2022$entry)) %>% unique())
 
@@ -98,9 +98,9 @@ gas_trade_chart_2022 <- sankeyNetwork(Links = top_exp_2022, Nodes = nodes_2022, 
 
 
 ```
-```{r message=FALSE, results='hold', fig.align='center'}
+```{r eval = TRUE, echo=FALSE, message=FALSE, results='hold', fig.align='center'}
 sankeyNetwork(Links = top_exp_2022, Nodes = nodes_2022, Source = "exitId", Target = "entryId", 
                                       Value = "export", NodeID = "name", sinksRight = TRUE, fontFamily = "Arial", fontSize = 10, nodePadding = 20)
 ```
 
-The visual displays the main natural gas trade flows (> 2000 Mcm) in Europe.
+The visual displays the main natural gas trade flows above 2000 Mcm in Europe.
