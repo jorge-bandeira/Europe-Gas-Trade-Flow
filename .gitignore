@@ -1,5 +1,6 @@
 *.xls
 *.csv
+*.jpg
 raw data
 .Rproj.user
 sankey_test.html
